@@ -1,0 +1,217 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp"
+    android:background="@drawable/bg4"
+    tools:context=".Profile">
+
+    <LinearLayout
+        android:id="@+id/linear"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentTop="true">
+
+        <!-- ImageView for the image -->
+        <ImageView
+            android:id="@+id/website_icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/logo"
+            android:contentDescription="Website Icon" />
+
+
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/LabelTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="User Profile"
+        android:textSize="20sp"
+        android:textColor="@color/black"
+        android:layout_below="@id/linear"
+        android:textStyle="bold"
+        android:layout_centerHorizontal="true"/>
+
+    <ImageView
+        android:id="@+id/profileimage"
+        android:layout_width="450px"
+        android:layout_height="450px"
+        android:layout_below="@id/LabelTitle"
+        android:layout_centerHorizontal="true"
+        android:src="@drawable/noprofile"
+        android:scaleType="centerCrop"
+        android:background="@drawable/circle_shape"
+    />
+
+    <TextView
+        android:id="@+id/fullnametextview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:layout_marginTop="24dp"
+        android:text="Fullname"
+        android:textSize="14sp"
+        android:layout_below="@id/profileimage" />
+
+    <TextView
+        android:id="@+id/emailtextview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:layout_marginTop="14dp"
+        android:text="Email"
+        android:textSize="14sp"
+        android:layout_below="@id/fullnametextview" />
+
+    <TextView
+        android:id="@+id/contactnumtextview"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:layout_marginTop="14dp"
+        android:text="Contact Number"
+        android:textSize="14sp"
+        android:layout_below="@id/emailtextview" />
+
+    <TextView
+        android:id="@+id/fullnameLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:layout_marginTop="24dp"
+        android:text="FULL NAME:"
+        android:textSize="14sp"
+        android:layout_below="@id/profileimage" />
+
+    <EditText
+        android:id="@+id/fullnameEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Change Fullname"
+        android:textColor="@color/black"
+        android:textColorHint="@color/black"
+        android:layout_below="@id/fullnameLabel"
+        android:textSize="14dp" />
+
+    <TextView
+        android:id="@+id/ContactLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@color/black"
+        android:layout_marginTop="14dp"
+        android:text="CONTACT NUMBER:"
+        android:textSize="14sp"
+        android:layout_below="@id/fullnameEdit" />
+
+    <EditText
+        android:id="@+id/contactEdit"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="Change Contact Number"
+        android:textColor="@color/black"
+        android:textColorHint="@color/black"
+        android:layout_below="@id/ContactLabel"
+        android:textSize="14dp" />
+
+    <Button
+        android:id="@+id/changeprofilephoto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/contactnumtextview"
+        android:textColor="@color/black"
+        android:text="Change Profile Photo"
+        android:textSize="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginTop="65dp"
+        />
+
+    <Button
+        android:id="@+id/UploadPhoto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/profileimage"
+        android:textColor="@color/black"
+        android:text="Click here to insert a profile photo"
+        android:textSize="10dp"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="25dp"
+        />
+
+    <Button
+        android:id="@+id/cancelbtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/contactEdit"
+        android:textColor="@color/black"
+        android:text="Cancel"
+        android:textSize="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginLeft="30dp"
+        android:layout_marginTop="105dp"
+        />
+
+    <Button
+        android:id="@+id/submitChangeUserInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/contactEdit"
+        android:textColor="@color/black"
+        android:textSize="10dp"
+        android:text="Submit"
+        android:layout_marginLeft="20dp"
+        android:layout_toRightOf="@id/cancelbtn"
+        android:layout_marginTop="105dp" />
+
+    <Button
+        android:id="@+id/submitChangeUserPhoto"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/contactEdit"
+        android:textColor="@color/black"
+        android:textSize="10dp"
+        android:text="Submit"
+        android:layout_marginLeft="20dp"
+        android:layout_toRightOf="@id/cancelbtn"
+        android:layout_marginTop="105dp" />
+
+    <Button
+        android:id="@+id/editInfo"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/contactnumtextview"
+        android:textColor="@color/black"
+        android:textSize="10dp"
+        android:text="Change Profile Info"
+        android:layout_marginLeft="10dp"
+        android:layout_toRightOf="@id/changeprofilephoto"
+        android:layout_marginTop="65dp" />
+
+    <Button
+        android:id="@+id/logout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/editInfo"
+        android:textColor="@color/black"
+        android:text="Logout"
+        android:textSize="10dp"
+        android:layout_marginTop="25dp"
+        android:layout_centerHorizontal="true"
+        />
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginRight="16dp"
+        android:src="@drawable/menu"
+        app:elevation="6dp"
+        app:pressedTranslationZ="12dp" />
+</RelativeLayout>

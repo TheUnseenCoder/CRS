@@ -26,10 +26,24 @@
 
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/custom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Event Scheduled"
+        android:textColor="@color/black"
+        android:fontFamily="@font/lexenddeca"
+        android:textSize="17sp"
+        android:layout_below="@id/linear"
+        android:layout_marginTop="25dp"
+        android:layout_marginBottom="25dp"
+        android:layout_centerHorizontal="true"/>
+
     <ScrollView
+        android:id="@+id/parent_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout_below="@id/linear"
+        android:layout_below="@id/custom"
         >
 
         <RelativeLayout
@@ -128,50 +142,105 @@
                 android:textSize="15sp"
                 android:text="freebies here" />
 
-            <CalendarView
-                android:id="@+id/calendarView"
+            <TextView
+                android:id="@+id/LblDate"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
                 android:layout_below="@id/freebiestext"
-                android:theme="@style/CustomCalendarViewTheme"
-                android:background="@color/black" />
-
-            <Button
-                android:id="@+id/time_button"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="Select Time"
-                android:textColor="@color/white"
-                android:layout_below="@id/calendarView"
                 android:layout_marginTop="16dp"
-                android:background="@drawable/rounded_corner_background"
-                android:padding="12dp" />
+                android:text="Date:"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/datetext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/LblDate"
+                android:textColor="@color/black"
+                android:textSize="15sp"
+                android:text="2024-03-04" />
+
+            <TextView
+                android:id="@+id/LblTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/datetext"
+                android:layout_marginTop="16dp"
+                android:text="Time:"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/timetext"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/LblTime"
+                android:textColor="@color/black"
+                android:textSize="15sp"
+                android:text="3:00PM" />
 
             <TextView
                 android:id="@+id/LblAdditionals"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@id/time_button"
+                android:layout_below="@id/timetext"
                 android:layout_marginTop="16dp"
                 android:text="Additionals:"
                 android:textColor="@color/black"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
-            <EditText
+            <TextView
                 android:id="@+id/additionalstext"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_below="@id/LblAdditionals"
                 android:textColor="@color/black"
-                android:lines="8"
-                android:minLines="6"
-                android:gravity="top|start"
-                android:maxLines="10"
                 android:textSize="15sp"
-                android:hint="Any additional: Celebrator Names, Contact Number, Themes Suggestions" />
+               />
 
+            <TextView
+                android:id="@+id/LblBalance"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/additionalstext"
+                android:layout_marginTop="16dp"
+                android:text="Balance:"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/balancetext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/LblBalance"
+                android:textColor="@color/black"
+                android:textSize="15sp"
+                />
+
+            <TextView
+                android:id="@+id/LblPaymentStatus"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/balancetext"
+                android:layout_marginTop="16dp"
+                android:text="Payment Status:"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/paymentstatustext"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_below="@id/LblPaymentStatus"
+                android:textColor="@color/black"
+                android:textSize="15sp"
+                />
 
             <!-- 70% Payment TextView and Button -->
             <LinearLayout
@@ -180,8 +249,10 @@
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:layout_marginTop="25dp"
-                android:layout_below="@id/additionalstext"
+                android:layout_below="@id/paymentstatustext"
                 android:gravity="center_horizontal">
+
+
 
                 <com.paypal.checkout.paymentbutton.PaymentButtonContainer
                     android:id="@+id/payment_button_container_70"
@@ -197,6 +268,16 @@
                     app:paypal_button_size="large" />
 
             </LinearLayout>
+
+            <Button
+                android:id="@+id/order_received"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/paymentstatustext"
+                android:textColor="@color/white"
+                android:text="Order Received"
+                android:layout_marginTop="25dp"
+                android:layout_centerHorizontal="true"/>
 
         </RelativeLayout>
 

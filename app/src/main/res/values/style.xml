@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="CustomCalendarViewTheme" parent="Theme.AppCompat">
+        <!-- Customize colorControlActivated to change the selected date color -->
+        <item name="colorControlActivated">@color/your_selected_date_color</item>
+        <!-- Customize colorControlNormal to change the default date color -->
+        <item name="colorControlNormal">@color/your_default_date_color</item>
+        <!-- Add more customizations here if needed -->
+    </style>
+</resources>

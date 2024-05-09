@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:padding="16dp"
+    android:background="@drawable/bg4"
+    tools:context=".KACSCpolicy">
+
+    <LinearLayout
+        android:id="@+id/linear"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_alignParentTop="true">
+
+        <!-- ImageView for the image -->
+        <ImageView
+            android:id="@+id/website_icon"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:src="@drawable/logo"
+            android:contentDescription="Website Icon" />
+
+
+        <TextView
+            android:id="@+id/CRS"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Catering Events Reservation System Policies"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:textSize="18sp"
+            android:layout_marginLeft="18dp"
+            android:layout_centerHorizontal="true"
+            />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:layout_below="@id/linear"
+        android:layout_marginTop="16dp"
+        >
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/orderingTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="ORDERING CAKES"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/orderingDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:text="After placing your online cake order, you will receive a bill that you can settle. Please note that full payment must be received before your cake is prepared and/or picked up."
+            android:textSize="16sp"
+            android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/modificationsTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CHANGES, CANCELLATIONS &amp; PICK UP"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginBottom="8dp"
+                android:textColor="@color/black"
+                />
+
+            <TextView
+                android:id="@+id/modificationsDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Once your orders are confirmed by the admin, they cannot be changed or canceled. Before completing your online cake order, be sure to check and review your order before placing it."
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/pickUpTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="PICK-UP TIME AND LOCATION"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/pickUpDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="The customer must pick up the cake at the requested pick-up time when the status is 'Ready to Pick Up', or the customer can pick up the cake at the store."
+                android:textSize="16sp"
+                android:textColor="@color/black"
+                android:layout_marginBottom="16dp"/>
+
+            <TextView
+                android:id="@+id/customizationTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TRANSPORTING "
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/customizationDetails"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:text="After an order leaves our facility, you are in charge of securely carrying it home; we assume no liability in this regard. Place the cake on a level surface to prevent mishaps."
+                android:textSize="16sp"
+                android:layout_marginBottom="16dp"/>
+        </LinearLayout>
+    </ScrollView>
+
+    <com.google.android.material.floatingactionbutton.FloatingActionButton
+        android:id="@+id/fab"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_marginBottom="16dp"
+        android:layout_marginRight="16dp"
+        android:src="@drawable/menu"
+        app:elevation="6dp"
+        app:pressedTranslationZ="12dp" />
+
+</RelativeLayout>

@@ -85,6 +85,9 @@ public class ProductList extends AppCompatActivity implements ProductAdapter.OnP
         // Initialize data list
         products = new ArrayList<>();
         categoryname = getIntent().getStringExtra("CATEGORY_NAME");
+        TextView titlelabel = findViewById(R.id.LabelTitle);
+        titlelabel.setText(categoryname + " Package");
+
         Toast.makeText(ProductList.this, categoryname, Toast.LENGTH_SHORT).show();
 
         // Fetch data using Volley

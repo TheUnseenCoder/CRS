@@ -9,6 +9,7 @@ import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
+import androidx.cardview.widget.CardView;
 import androidx.recyclerview.widget.RecyclerView;
 import com.bumptech.glide.Glide;
 import java.util.List;
@@ -32,6 +33,8 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
 
         public TextView productName1, productName2;
         public RelativeLayout categoryLayout1, categoryLayout2;
+        public CardView card1, card2;
+
 
         public ViewHolder(View itemView) {
             super(itemView);
@@ -39,6 +42,8 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
             productName2 = itemView.findViewById(R.id.product_name_2);
             categoryLayout1 = itemView.findViewById(R.id.category_layout_1);
             categoryLayout2 = itemView.findViewById(R.id.category_layout_2);
+            card1 = itemView.findViewById(R.id.card_view_1);
+            card2 = itemView.findViewById(R.id.card_view_2);
 
             categoryLayout1.setOnClickListener(new View.OnClickListener() {
                 @Override
@@ -86,6 +91,7 @@ public class CategoryAdapter extends RecyclerView.Adapter<CategoryAdapter.ViewHo
         } else {
             // If there is no second product, hide the second layout
             holder.productName2.setVisibility(View.INVISIBLE);
+            holder.card2.setVisibility(View.INVISIBLE);
         }
     }
 

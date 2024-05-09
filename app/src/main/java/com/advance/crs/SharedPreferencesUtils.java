@@ -17,4 +17,10 @@ public class SharedPreferencesUtils {
         editor.putString(PREF_EMAIL, email);
         editor.apply();
     }
+    public static void deleteStoredEmail(Context context) {
+        SharedPreferences sharedPreferences = context.getSharedPreferences(PREF_EMAIL, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPreferences.edit();
+        editor.remove(PREF_EMAIL);
+        editor.apply();
+    }
 }

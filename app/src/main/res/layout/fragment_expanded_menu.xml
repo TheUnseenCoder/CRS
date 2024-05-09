@@ -21,12 +21,18 @@
         android:id="@+id/customization_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Scheduled Order" />
+        android:text="Event Scheduled" />
 
     <Button
         android:id="@+id/payment_button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="Payments" />
+
+    <Button
+        android:id="@+id/policy_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Policies" />
 
 </LinearLayout>

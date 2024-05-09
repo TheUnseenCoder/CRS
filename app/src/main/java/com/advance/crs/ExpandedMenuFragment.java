@@ -31,21 +31,28 @@ public class ExpandedMenuFragment extends BottomSheetDialogFragment {
         view.findViewById(R.id.profile_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getContext(), Home.class);
+                Intent intent = new Intent(getContext(), Profile.class);
                 startActivity(intent);
             }
         });
         view.findViewById(R.id.customization_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getContext(), Home.class);
+                Intent intent = new Intent(getContext(), EventDetailsActivity.class);
                 startActivity(intent);
             }
         });
         view.findViewById(R.id.payment_button).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(getContext(), CategoryList.class);
+                Intent intent = new Intent(getContext(), PaymentHistory.class);
+                startActivity(intent);
+            }
+        });
+        view.findViewById(R.id.policy_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(getContext(), CRSpolicy.class);
                 startActivity(intent);
             }
         });

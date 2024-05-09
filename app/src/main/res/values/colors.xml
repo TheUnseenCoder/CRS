@@ -2,4 +2,8 @@
 <resources>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+    <color name="orange">#CC5500</color>
+    <color name="your_selected_date_color">#FF7F50</color>
+    <color name="your_default_date_color">#F2D2BD</color>
+
 </resources>

@@ -1,12 +1,17 @@
 package com.advance.crs;
 
+import android.app.TimePickerDialog;
 import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
+import android.widget.CalendarView;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -17,7 +22,11 @@ import android.widget.TableRow;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+
+import java.text.DecimalFormat;
+import java.util.Calendar;
 
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
@@ -29,20 +38,51 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
+import com.paypal.checkout.approve.Approval;
+import com.paypal.checkout.approve.OnApprove;
+import com.paypal.checkout.createorder.CreateOrder;
+import com.paypal.checkout.createorder.CreateOrderActions;
+import com.paypal.checkout.createorder.CurrencyCode;
+import com.paypal.checkout.createorder.OrderIntent;
+import com.paypal.checkout.createorder.UserAction;
+import com.paypal.checkout.order.Amount;
+import com.paypal.checkout.order.AppContext;
+import com.paypal.checkout.order.CaptureOrderResult;
+import com.paypal.checkout.order.OnCaptureComplete;
+import com.paypal.checkout.order.OrderRequest;
+import com.paypal.checkout.order.PurchaseUnit;
+import com.paypal.checkout.paymentbutton.PaymentButtonContainer;
 
+import org.jetbrains.annotations.NotNull;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Iterator;
+import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class ProductDetailsActivity extends AppCompatActivity {
 
     private List<String> sizesList = new ArrayList<>();
-    private RadioGroup variantsContainer; // Added RadioGroup for variants
+    private CalendarView calendarView;
+    List<String> bookedDates = new ArrayList<>();
+    private String selectedTime;
+    private String additional;
+    private static final String TAG = "MyTag";
+    PaymentButtonContainer paymentButtonContainer70;
+
+    private static final int PAYPAL_REQUEST_CODE = 123;
+    private String buyerEmail;
+    private int productID;
+    private String selectedDate;
+    private Double basePrice;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -50,7 +90,6 @@ public class ProductDetailsActivity extends AppCompatActivity {
         setContentView(R.layout.activity_product_details);
 
         // Initialize variants container
-        variantsContainer = findViewById(R.id.variants_container);
 
         FloatingActionButton fab = findViewById(R.id.fab);
         String email = getIntent().getStringExtra("email");
@@ -82,6 +121,9 @@ public class ProductDetailsActivity extends AppCompatActivity {
         }
 
         String productIdString = getIntent().getStringExtra("PRODUCT_ID");
+        buyerEmail = SharedPreferencesUtils.getStoredEmail(this);
+        productID = Integer.parseInt(getIntent().getStringExtra("PRODUCT_ID"));
+
 
         // Check if productIdString is not nullProdu
         if (productIdString != null) {
@@ -91,10 +133,6 @@ public class ProductDetailsActivity extends AppCompatActivity {
 
                 // Fetch product details, sizes, and variants
                 fetchProductDetails(productId);
-                fetchProductSizes(productId);
-                fetchProductVariants(productId);
-                fetchCurrentQuantity(productId);
-                fetchAndDisplayMeasurements(productId);
             } catch (NumberFormatException e) {
                 // Handle the case where productIdString cannot be parsed to an int
                 Toast.makeText(this, "Invalid product ID format", Toast.LENGTH_SHORT).show();
@@ -108,19 +146,146 @@ public class ProductDetailsActivity extends AppCompatActivity {
             finish();
         }
 
-        Button BuyNow = findViewById(R.id.buttonBuyNow);
-        BuyNow.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Handle add to cart button click
-                BuyNow();
-            }
-        });
+
+
+        calendarView = findViewById(R.id.calendarView);
+
+        // Disable past dates and dates before 1 week from today
+        Calendar minDate = Calendar.getInstance();
+        minDate.add(Calendar.DAY_OF_MONTH, 0);
+        minDate.add(Calendar.DAY_OF_MONTH, 7);
+        calendarView.setMinDate(minDate.getTimeInMillis());
+
+        // Set today's date as selected
+        calendarView.setDate(Calendar.getInstance().getTimeInMillis(), false, true);
+
+        // Fetch booked dates from server
+        fetchBookedDates();
+
+        EditText additionalEditText = findViewById(R.id.additionalstext);
+        additional = additionalEditText.getText().toString();
+
+        Button timeButton = findViewById(R.id.time_button);
+        timeButton.setOnClickListener(v -> showTimePicker());
+
+        paymentButtonContainer70 = findViewById(R.id.payment_button_container_70);
+        paymentButtonContainer70.setup(
+
+                new CreateOrder() {
+                    @Override
+                    public void create(@NotNull CreateOrderActions createOrderActions) {
+                        Log.d(TAG, "create: ");
+                        if (selectedTime == null || selectedDate == null || selectedDate.isEmpty() || selectedTime.isEmpty()) {
+                            // Show an error message if date or time is not selected
+                            Toast.makeText(ProductDetailsActivity.this, "Please select date and time", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+                        //add the if else here of selected date toast
+                        // Check if selected date is booked
+                        if (bookedDates.contains(selectedDate)) {
+                            // Date is booked, show toast and return
+                            Toast.makeText(ProductDetailsActivity.this, "Selected date is booked", Toast.LENGTH_SHORT).show();
+                            return;
+                        }
+
+                        checkExistingEvent(buyerEmail, new EventCheckCallback() {
+                            @Override
+                            public void onEventCheckResult(boolean eventExists) {
+                                if (eventExists) {
+                                    // Existing event found, display a message to the user
+                                    Toast.makeText(ProductDetailsActivity.this, "You already have an existing event scheduled", Toast.LENGTH_SHORT).show();
+                                } else {
+                                    // No existing event found, proceed with order creation
+                                    createOrder(createOrderActions);
+                                }
+                            }
+                        });
+                    }
+                },
+                new OnApprove() {
+                    @Override
+                    public void onApprove(@NotNull Approval approval) {
+                        // Check if required fields are selected
+                        handleApproval(approval);
+
+                    }
+                }
+        );
 
     }
+    interface EventCheckCallback {
+        void onEventCheckResult(boolean eventExists);
+    }
+    private void createOrder(@NotNull CreateOrderActions createOrderActions) {
+        ArrayList<PurchaseUnit> purchaseUnits = new ArrayList<>();
+        purchaseUnits.add(
+                new PurchaseUnit.Builder()
+                        .amount(
+                                new Amount.Builder()
+                                        .currencyCode(CurrencyCode.USD)
+                                        .value(String.valueOf(5000))
+                                        .build()
+                        )
+                        .build()
+        );
+        OrderRequest order = new OrderRequest(
+                OrderIntent.CAPTURE,
+                new AppContext.Builder()
+                        .userAction(UserAction.PAY_NOW)
+                        .build(),
+                purchaseUnits
+        );
+        createOrderActions.create(order, (CreateOrderActions.OnOrderCreated) null);
+    }
+    private void handleApproval(@NotNull Approval approval) {
+        approval.getOrderActions().capture(new OnCaptureComplete() {
+            @Override
+            public void onCaptureComplete(@NotNull CaptureOrderResult result) {
+                // Handle capture completion
+                // Accessing the transaction ID (payment_id) directly from the captures array
+                String resultString = String.format("CaptureOrderResult: %s", result);
+                // Define a regular expression pattern to match the id
+                Pattern pattern = Pattern.compile("Capture\\(id=(\\w+),");
+                // Create a matcher with the input string
+                Matcher matcher = pattern.matcher(resultString);
+                if (matcher.find()) {
+                    String transactionId = matcher.group(1);
+                    // Further processing with the transaction ID
+                    Toast.makeText(ProductDetailsActivity.this, "Successfully Paid", Toast.LENGTH_SHORT).show();
 
+                    Log.e("Transaction ID: ", transactionId);
+                    String payerId = String.format("%s", approval.getData().getPayerId());
+                    String payerPaymentEmail1 = String.format("%s", approval.getData().getPayer().getEmail());
+                    String payerGivenName = String.format("%s", approval.getData().getPayer().getName().getGivenName());
+                    String payerFamilyName = String.format("%s", approval.getData().getPayer().getName().getFamilyName());
+                    String payerPaymentEmail = payerPaymentEmail1.substring(payerPaymentEmail1.indexOf("=") + 1, payerPaymentEmail1.indexOf(",")).trim();
+
+                    // Send order details to server based on payment percent
+                    sendOrderDetailsToServer(additional, basePrice, buyerEmail, productID, payerId, selectedTime, selectedDate, transactionId, payerPaymentEmail, payerGivenName, payerFamilyName);
+                } else {
+                    // Handle case when no match is found
+                    Log.e("Transaction ID: ", "No match found");
+                    Toast.makeText(ProductDetailsActivity.this, "Failed to process transaction ID", Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+    }
+    private void showTimePicker() {
+        Calendar calendar = Calendar.getInstance();
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+
+        TimePickerDialog timePickerDialog = new TimePickerDialog(this, (view, selectedHour, selectedMinute) -> {
+            // Handle the selected time
+            Button timeButton = findViewById(R.id.time_button);
+            selectedTime = selectedHour + ":" + selectedMinute;
+            timeButton.setText(selectedTime);
+            // Update the UI or perform other actions
+        }, hour, minute, false);
+        timePickerDialog.show();
+    }
     private void fetchProductDetails(int productId) {
-        String url = "http://192.168.1.11/tailoringSystem/includes/product_details.php?product_id=" + productId;
+        String url = "http://192.168.1.11/CRS/includes/product_details.php?product_id=" + productId;
         JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONObject>() {
                     @Override
@@ -132,12 +297,31 @@ public class ProductDetailsActivity extends AppCompatActivity {
                             TextView productNameTextView = findViewById(R.id.textViewProductName);
                             TextView productDescriptionTextView = findViewById(R.id.textViewProductDescription);
                             TextView productPrice = findViewById(R.id.baseprice);
+                            TextView productPax = findViewById(R.id.pax);
+                            TextView productInclusion = findViewById(R.id.inclusiontext);
+                            TextView productFreebies = findViewById(R.id.freebiestext);
+
                             productNameTextView.setText(productDetails.getString("product_name"));
                             productDescriptionTextView.setText(productDetails.getString("product_description"));
                             productPrice.setText("₱" + productDetails.getString("base_price"));
+                            productPax.setText("Pax: " + productDetails.getString("pax"));
+                            productInclusion.setText(productDetails.getString("inclusion"));
+                            basePrice = productDetails.getDouble("base_price");
+                            String freebies = productDetails.getString("freebies");
+                            if (freebies == null || freebies.isEmpty()) {
+                                productFreebies.setText("No Freebies in this Package");
+                            } else {
+                                productFreebies.setText(freebies);
+                            }
 
+                            String imageBlob = productDetails.getString("image");
+
+                            byte[] imageData = Base64.decode(productDetails.getString("image"), Base64.DEFAULT);
+                            Bitmap bitmap = BitmapFactory.decodeByteArray(imageData, 0, imageData.length);
+                            ImageView imageView = findViewById(R.id.images_container); // Update with correct ImageView ID
+                            imageView.setImageBitmap(bitmap);
                             // Display images
-                            displayImages(productDetails.getJSONArray("images"));
+//                            displayImages(productDetails.getJSONArray("images"));
                         } catch (JSONException e) {
                             e.printStackTrace();
                         }
@@ -153,410 +337,70 @@ public class ProductDetailsActivity extends AppCompatActivity {
         Volley.newRequestQueue(this).add(jsonObjectRequest);
     }
 
-    private void fetchProductSizes(int productId) {
-        String url = "http://192.168.1.11/tailoringSystem/includes/product_sizes.php?product_id=" + productId;
+
+    private void fetchBookedDates() {
+        String url = "http://192.168.1.11/CRS/includes/fetch_booked_dates.php";
+
+        // Fetch booked dates from server
         JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,
                 new Response.Listener<JSONArray>() {
                     @Override
                     public void onResponse(JSONArray response) {
-                        try {
-                            // Update sizes list
-                            sizesList.clear();
-                            for (int i = 0; i < response.length(); i++) {
-                                sizesList.add(response.getString(i));
+                        // Iterate over booked dates and store them
+                        for (int i = 0; i < response.length(); i++) {
+                            try {
+                                String dateString = response.getString(i);
+                                bookedDates.add(dateString);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
                             }
-
-                            // Display sizes
-                            displaySizes();
-                        } catch (JSONException e) {
-                            e.printStackTrace();
                         }
+                        // Disable booked dates in the calendar
+                        disableBookedDates();
                     }
                 },
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        error.printStackTrace();
-                    }
-                });
-
-        Volley.newRequestQueue(this).add(jsonArrayRequest);
-    }
-
-    private void fetchProductVariants(int productId) {
-        String url = "http://192.168.1.11/tailoringSystem/includes/product_variants.php?product_id=" + productId;
-        JsonArrayRequest jsonArrayRequest = new JsonArrayRequest(Request.Method.GET, url, null,
-                new Response.Listener<JSONArray>() {
-                    @Override
-                    public void onResponse(JSONArray response) {
-                        try {
-                            // Clear existing radio buttons
-                            variantsContainer.removeAllViews();
-
-                            // Create RadioButtons for each variant
-                            for (int i = 0; i < response.length(); i++) {
-                                String variant = response.getString(i);
-                                // Check if variant contains comma
-                                if (variant.contains(",")) {
-                                    // Split variant by comma and add each part as a separate RadioButton
-                                    String[] variants = variant.split(", ");
-                                    for (String v : variants) {
-                                        addRadioButton(v);
-                                    }
-                                } else {
-                                    // Add single RadioButton for the variant
-                                    addRadioButton(variant);
-                                }
-                            }
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                },
-                new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        error.printStackTrace();
-                    }
-                });
-
-        Volley.newRequestQueue(this).add(jsonArrayRequest);
-    }
-
-    private void addRadioButton(String variant) {
-        // Create RadioButton for the variant
-        RadioButton radioButton = new RadioButton(ProductDetailsActivity.this);
-        radioButton.setText(variant);
-        radioButton.setTextColor(getResources().getColor(android.R.color.white));
-
-        // Add RadioButton to the RadioGroup
-        variantsContainer.addView(radioButton);
-    }
-
-    private void displayImages(JSONArray imagesArray) {
-        try {
-            LinearLayout imagesContainer = findViewById(R.id.images_container);
-
-            // Check if imagesArray is empty
-            if (imagesArray.length() == 0) {
-                // If no images available, add default image
-                ImageView defaultImageView = new ImageView(ProductDetailsActivity.this);
-                LinearLayout.LayoutParams defaultLayoutParams = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.MATCH_PARENT
-                );
-                defaultImageView.setLayoutParams(defaultLayoutParams);
-                defaultImageView.setImageResource(R.drawable.default_product_image);
-                defaultImageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-                imagesContainer.addView(defaultImageView);
-                return; // Exit the method
-            }
-
-            // Calculate the desired width for the ImageView
-            int desiredWidth = 900; // Adjust as needed
-
-            // Iterate through each image URL
-            for (int i = 0; i < imagesArray.length(); i++) {
-                String imageUrl = imagesArray.getString(i);
-
-                // Create a new ImageView with fixed dimensions
-                ImageView imageView = new ImageView(ProductDetailsActivity.this);
-                LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(
-                        desiredWidth,
-                        LinearLayout.LayoutParams.MATCH_PARENT
-                );
-                layoutParams.setMargins(0, 0, 3, 0);
-                imageView.setLayoutParams(layoutParams);
-                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-
-                imageView.setTag(imageUrl);
-
-
-                // Use Volley to load the image asynchronously
-                ImageRequest imageRequest = new ImageRequest(imageUrl,
-                        new Response.Listener<android.graphics.Bitmap>() {
-                            @Override
-                            public void onResponse(android.graphics.Bitmap response) {
-                                // Set the loaded image to the ImageView
-                                imageView.setImageBitmap(response);
-                            }
-                        }, 0, 0, null,
-                        new Response.ErrorListener() {
-                            @Override
-                            public void onErrorResponse(VolleyError error) {
-                                // Handle error loading image
-                                Log.e("Image Loading", "Error loading image: " + error.getMessage());
-                            }
-                        });
-
-                // Add the ImageRequest to the Volley RequestQueue
-                Volley.newRequestQueue(ProductDetailsActivity.this).add(imageRequest);
-
-                // Add the ImageView to the imagesContainer
-                imagesContainer.addView(imageView);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void displaySizes() {
-        try {
-            RadioGroup sizesContainer = findViewById(R.id.sizes_container);
-            sizesContainer.clearCheck();
-            sizesContainer.removeAllViews();
-            int textColor = getResources().getColor(android.R.color.white);
-
-            // Create RadioButtons for each size
-            for (String size : sizesList) {
-                RadioButton radioButton = new RadioButton(ProductDetailsActivity.this);
-                radioButton.setText(size);
-                radioButton.setTextColor(textColor);
-
-                radioButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        // Uncheck all other RadioButtons
-                        for (int i = 0; i < sizesContainer.getChildCount(); i++) {
-                            View child = sizesContainer.getChildAt(i);
-                            if (child instanceof RadioButton && child != view) {
-                                ((RadioButton) child).setChecked(false);
-                            }
-                        }
-                    }
-                });
-
-                // Add RadioButton to the RadioGroup
-                sizesContainer.addView(radioButton);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void fetchCurrentQuantity(int productId) {
-        String url = "http://192.168.1.11/tailoringSystem/includes/product_quantity.php?product_id=" + productId;
-
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
-
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        try {
-                            // Parse the response JSON to get the current quantity
-                            int currentQuantity = response.getInt("current_quantity");
-
-                            // Update the TextView with the current quantity
-                            TextView tvCurrentQty = findViewById(R.id.tvCurrentQty);
-                            tvCurrentQty.setText("Current Qty: " + currentQuantity);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        // Handle errors
                         error.printStackTrace();
                     }
                 });
 
         // Add the request to the RequestQueue
-        Volley.newRequestQueue(this).add(jsonObjectRequest);
-    }
-    private void fetchAndDisplayMeasurements(int productId) {
-        // Instantiate the RequestQueue.
-        RequestQueue queue = Volley.newRequestQueue(this);
-        String FETCH_URL = "http://192.168.1.11/tailoringSystem/includes/fetch_matrix.php?product_id=%d";
-        String url = String.format(FETCH_URL, productId);
-
-        // Request a JSON response from the provided URL.
-        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest
-                (Request.Method.GET, url, null, new Response.Listener<JSONObject>() {
-                    @Override
-                    public void onResponse(JSONObject response) {
-                        populateMeasurementsTable(response);
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        error.printStackTrace();
-                    }
-                });
-
-        // Add the request to the RequestQueue.
-        queue.add(jsonObjectRequest);
+        Volley.newRequestQueue(this).add(jsonArrayRequest);
     }
 
-
-    private void populateMeasurementsTable(JSONObject measurements) {
-        TableLayout measurementsTable = findViewById(R.id.measurementsTable);
-
-        try {
-            // Add header row
-            TableRow headerRow = new TableRow(this);
-            headerRow.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-            TextView sizeTextView = createTextView("Size");
-            headerRow.addView(sizeTextView);
-
-            // Extract measurement names dynamically from the first size
-            JSONObject firstSizeObject = measurements.getJSONObject(measurements.keys().next());
-            for (Iterator<String> measurementIterator = firstSizeObject.keys(); measurementIterator.hasNext();) {
-                String measurementName = measurementIterator.next();
-                TextView measurementNameTextView = createTextView(measurementName);
-                headerRow.addView(measurementNameTextView);
-            }
-
-            // Add header for "Additional"
-            TextView additionalHeader = createTextView("ADDITIONAL");
-            headerRow.addView(additionalHeader);
-
-            measurementsTable.addView(headerRow);
-
-            // Iterate over each size in the measurements object
-            for (Iterator<String> sizeIterator = measurements.keys(); sizeIterator.hasNext();) {
-                String size = sizeIterator.next();
-                JSONObject sizeObject = measurements.getJSONObject(size);
-
-                // Create a new row for each size
-                TableRow row = new TableRow(this);
-                row.setLayoutParams(new TableRow.LayoutParams(TableRow.LayoutParams.WRAP_CONTENT, TableRow.LayoutParams.WRAP_CONTENT));
-
-                // Add size TextView to the row
-                TextView sizeNameTextView = createTextView(size);
-                row.addView(sizeNameTextView);
-
-                double totalAdditional = 0.0; // Initialize total additional for the current row
-
-                // Iterate over each measurement for the current size
-                for (Iterator<String> measurementIterator = sizeObject.keys(); measurementIterator.hasNext();) {
-                    String measurementName = measurementIterator.next();
-                    JSONObject measurementObject = sizeObject.getJSONObject(measurementName);
-                    String measurementSize = measurementObject.getString("measurement_size");
-                    String additional = measurementObject.getString("additional");
-
-                    // Create TextView for the measurement size and additional, then add to the row
-                    TextView measurementSizeTextView = createTextView(measurementSize);
-                    row.addView(measurementSizeTextView);
-
-                    // Update total additional
-                    totalAdditional += Double.parseDouble(additional);
+    // Method to disable booked dates in the calendar
+    private void disableBookedDates() {
+        calendarView.setOnDateChangeListener(new CalendarView.OnDateChangeListener() {
+            @Override
+            public void onSelectedDayChange(@NonNull CalendarView view, int year, int month, int dayOfMonth) {
+                // Format selected date
+                selectedDate = String.format(Locale.getDefault(), "%04d-%02d-%02d", year, month + 1, dayOfMonth);
+                // Check if selected date is in bookedDates list
+                if (bookedDates.contains(selectedDate)) {
+                    // Date is booked, prevent selection
+                    Toast.makeText(ProductDetailsActivity.this, "Date is booked", Toast.LENGTH_SHORT).show();
+                    view.setDate(calendarView.getDate(), false, true); // Reset to current date
                 }
-
-                // Add total additional to the row
-                TextView totalAdditionalTextView = createTextView(String.valueOf(totalAdditional));
-                row.addView(totalAdditionalTextView);
-
-                // Add the row to the table
-                measurementsTable.addView(row);
             }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+        });
     }
-
-
-
-    private TextView createTextView(String text) {
-        TextView textView = new TextView(this);
-        textView.setText(text);
-        textView.setTextSize(16);
-        textView.setTextColor(Color.WHITE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
-            textView.setTextAlignment(View.TEXT_ALIGNMENT_CENTER); // Set text alignment to center
-        }
-        textView.setPadding(40, 40, 40, 40);
-        return textView;
-    }
-
-    // Method to handle adding the selected product to the cart
-// Method to handle adding the selected product to the cart
-
-    private void BuyNow() {
-        // Get the selected size
-        RadioGroup sizesContainer = findViewById(R.id.sizes_container);
-        int selectedSizeId = sizesContainer.getCheckedRadioButtonId();
-        RadioButton selectedSizeRadioButton = findViewById(selectedSizeId);
-        String selectedSize = selectedSizeRadioButton != null ? selectedSizeRadioButton.getText().toString() : "";
-
-        // Get the selected variant
-        int selectedVariantId = variantsContainer.getCheckedRadioButtonId();
-        RadioButton selectedVariantRadioButton = findViewById(selectedVariantId);
-        String selectedVariant = selectedVariantRadioButton != null ? selectedVariantRadioButton.getText().toString() : "";
-
-        // Get the selected quantity
-        EditText qtyEditText = findViewById(R.id.ETqty);
-        String qtyString = qtyEditText.getText().toString();
-        int qty = qtyString.isEmpty() ? 0 : Integer.parseInt(qtyString);
-
-        // Get other product details
-        String productName = ((TextView) findViewById(R.id.textViewProductName)).getText().toString();
-        String productDescription = ((TextView) findViewById(R.id.textViewProductDescription)).getText().toString();
-        String basePrice = ((TextView) findViewById(R.id.baseprice)).getText().toString();
-        // Get the product ID
-
-        String productIdString = getIntent().getStringExtra("PRODUCT_ID");
-        int productId = productIdString != null ? Integer.parseInt(productIdString) : 0;
-        String email = SharedPreferencesUtils.getStoredEmail(this);
-
-        List<String> imagesList = new ArrayList<>();
-        LinearLayout imagesContainer = findViewById(R.id.images_container);
-
-        if (imagesContainer.getChildCount() > 0) {
-            ImageView firstImageView = (ImageView) imagesContainer.getChildAt(0);
-            Object tag = firstImageView.getTag();
-            String firstImageUrl = (tag != null) ? tag.toString() : "";
-            imagesList.add(firstImageUrl);
-        }
-
-
-
-        // Check if required fields are selected
-        if (selectedSize.isEmpty() || selectedVariant.isEmpty() || qty == 0 || qtyString.isEmpty()) {
-            // Notify the user to select all required options
-            Toast.makeText(this, "Please select size, variant, and enter quantity", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        String addToCartUrl = "http://192.168.1.11/tailoringSystem/includes/seeqty.php?" +
-                "product_id=" + productId +
-                "&email=" + email +
-                "&quantity=" + qty;
-
-        // Create a request queue
-        RequestQueue queue = Volley.newRequestQueue(this);
-
-        // Create a string request to send the data to the server
-        StringRequest stringRequest = new StringRequest(Request.Method.GET, addToCartUrl,
+    private void sendOrderDetailsToServer(String additional, Double basePrice, String buyer_email, int product_id, String payerId, String selectedTime, String selectedDate, String transactionId, String payerPaymentEmail, String payerGivenName, String payerFamilyName) {
+        // Example:
+        String url = "http://192.168.1.11/CRS/includes/buynow.php";
+        StringRequest request = new StringRequest(Request.Method.POST, url,
                 new Response.Listener<String>() {
                     @Override
                     public void onResponse(String response) {
-                        // Handle the response from the server
-                        // If the response contains "success", show success message
-                        // Otherwise, show error message
-                        if (response.contains("success")) {
-//                            Intent intent = new Intent(ProductDetailsActivity.this, PlaceOrder.class);
-//
-//                            // Pass the product details as extras
-//                            intent.putExtra("EMAIL", email);
-//                            intent.putExtra("PRODUCT_ID", productId);
-//                            intent.putExtra("PRODUCT_NAME", productName);
-//                            intent.putExtra("PRODUCT_DESCRIPTION", productDescription);
-//                            intent.putExtra("BASE_PRICE", basePrice);
-//                            intent.putExtra("SELECTED_SIZE", selectedSize);
-//                            intent.putExtra("SELECTED_VARIANT", selectedVariant);
-//                            intent.putExtra("QUANTITY", qty);
-//
-//                            // Serialize the imagesList and pass it as an ArrayList
-//
-//                            intent.putStringArrayListExtra("IMAGES", new ArrayList<>(imagesList));
-//
-//
-//                            startActivity(intent);
-
+                        // Handle server response
+                        if (response.trim().equalsIgnoreCase("success")) {
+                            // Order placed successfully
+                            Toast.makeText(ProductDetailsActivity.this, "Order placed successfully", Toast.LENGTH_SHORT).show();
+                            Intent intent = new Intent(ProductDetailsActivity.this, CategoryList.class);
+                            startActivity(intent);
                         } else {
+                            // Order placement failed
                             Toast.makeText(ProductDetailsActivity.this, response, Toast.LENGTH_SHORT).show();
                         }
                     }
@@ -564,15 +408,65 @@ public class ProductDetailsActivity extends AppCompatActivity {
                 new Response.ErrorListener() {
                     @Override
                     public void onErrorResponse(VolleyError error) {
-                        // Handle errors that occur during the request
-                        Toast.makeText(ProductDetailsActivity.this, "Error occurred. Please try again later.", Toast.LENGTH_SHORT).show();
+                        // Handle error
+                        Toast.makeText(ProductDetailsActivity.this, "Failed to place order. Please try again later.", Toast.LENGTH_SHORT).show();
+                    }
+                }) {
+            @Override
+            protected Map<String, String> getParams() {
+                Map<String, String> params = new HashMap<>();
+                // Add parameters for the order details
+                params.put("base_price", String.valueOf(basePrice));
+                params.put("email", buyer_email);
+                params.put("product_id", String.valueOf(product_id));
+                params.put("transaction_id", transactionId);
+                params.put("payer_id", payerId);
+                params.put("payer_givenname", payerGivenName);
+                params.put("payer_familyname", payerFamilyName);
+                params.put("payer_email", payerPaymentEmail);
+                params.put("time", selectedTime);
+                params.put("date", selectedDate);
+                params.put("additional", additional);
+
+                return params;
+            }
+        };
+        Volley.newRequestQueue(this).add(request);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        finish();
+    }
+
+    // Inside your checkExistingEvent method
+    private void checkExistingEvent(String buyerEmail, EventCheckCallback callback) {
+        String url = "http://192.168.1.11/CRS/includes/event_checker.php?email=" + buyerEmail;
+
+        // Create a JSON object request
+        JsonObjectRequest jsonObjectRequest = new JsonObjectRequest(Request.Method.GET, url, null,
+                new Response.Listener<JSONObject>() {
+                    @Override
+                    public void onResponse(JSONObject response) {
+                        try {
+                            boolean eventExists = response.getBoolean("event_exists");
+                            callback.onEventCheckResult(eventExists);
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                },
+                new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
                         error.printStackTrace();
+                        // Handle error response
                     }
                 });
 
-        // Add the request to the request queue
-        queue.add(stringRequest);
-
+        // Add the request to the RequestQueue
+        Volley.newRequestQueue(this).add(jsonObjectRequest);
     }
 
 }
